@@ -110,6 +110,10 @@ header h1{font-family:var(--cond);font-weight:900;font-size:1.4rem;letter-spacin
 .btn-sm{font-family:var(--mono);font-size:.65rem;padding:4px 8px;border-radius:3px;border:none;cursor:pointer;white-space:nowrap}
 .btn-hold{background:rgba(210,153,34,.2);color:var(--c-hold)}
 .btn-hold.active{background:var(--c-hold);color:#0d1117;font-weight:bold}
+.btn-fwd{background:rgba(163,113,247,.2);color:var(--c-fwd)}
+.btn-fwd.active{background:var(--c-fwd);color:#0d1117;font-weight:bold}
+.btn-vac{background:rgba(125,141,161,.15);color:var(--c-vac)}
+.btn-vac.active{background:var(--c-vac);color:#0d1117;font-weight:bold}
 .btn-clear{background:rgba(200,16,46,.15);color:var(--warn)}
 
 /* Unit rows */
@@ -161,6 +165,10 @@ function getAN(rid,num){return S['an'+rid+'_'+num]||''}
 function setAN(rid,num,v){S['an'+rid+'_'+num]=v;saveState(S)}
 function getH(rid,num){return!!S['h'+rid+'_'+num]}
 function setH(rid,num,v){S['h'+rid+'_'+num]=v?1:0;saveState(S)}
+function getF(rid,num){return!!S['f'+rid+'_'+num]}
+function setF(rid,num,v){S['f'+rid+'_'+num]=v?1:0;saveState(S)}
+function getV(rid,num){return!!S['v'+rid+'_'+num]}
+function setV(rid,num,v){S['v'+rid+'_'+num]=v?1:0;saveState(S)}
 function countH(rid){let n=0;for(const k in S){if(k.startsWith('h'+rid+'_')&&S[k])n++}return n}
 
 // ── Helpers ──
@@ -181,9 +189,11 @@ function buildSegs(segs,rid){
     }else if(s.type==='stop'){
       const sid=rid+'_'+s.num;
       const hold=getH(rid,s.num);
+      const manFwd=getF(rid,s.num);
+      const manVac=getV(rid,s.num);
       const an=getAN(rid,s.num);
-      const isFwd=(s.flags||[]).includes('fwd')||s.noteType==='fwd';
-      const isVac=(s.flags||[]).includes('vac')||s.noteType==='vac';
+      const isFwd=manFwd||(s.flags||[]).includes('fwd')||s.noteType==='fwd';
+      const isVac=manVac||(s.flags||[]).includes('vac')||s.noteType==='vac';
       let rc='stop';
       if(hold)rc+=' is-hold';
       else if(isFwd)rc+=' is-fwd';
@@ -200,10 +210,12 @@ function buildSegs(segs,rid){
       </div>`;
       if(s.units)for(const u of s.units)html+=`<div class="unit" style="background:${cc}0d"><span class="uid">${s.num}${u}</span></div>`;
       if(s.code){const ex=s.codeNote?`<span class="clbl" style="margin-left:8px">${s.codeNote}</span>`:'';html+=`<div class="codebox"><span class="clbl">Code</span><strong>${s.code}</strong>${ex}</div>`;}
-      html+=`<div class="anote${an?' visible':''}" id="ap${sid}">
+      html+=`<div class="anote${(an||hold||manFwd||manVac)?' visible':''}" id="ap${sid}">
         <textarea placeholder="Add note..." oninput="saveAN(${rid},'${s.num}',this.value)">${an}</textarea>
         <div class="anote-btns">
           <button class="btn-sm btn-hold${hold?' active':''}" onclick="togHold(event,${rid},'${s.num}')">${hold?'HELD':'HOLD'}</button>
+          <button class="btn-sm btn-fwd${manFwd?' active':''}" onclick="togFwd(event,${rid},'${s.num}')">${manFwd?'FWD ✓':'FWD'}</button>
+          <button class="btn-sm btn-vac${manVac?' active':''}" onclick="togVac(event,${rid},'${s.num}')">${manVac?'VAC ✓':'VAC'}</button>
           <button class="btn-sm btn-clear" onclick="clearAddr(event,${rid},'${s.num}')">CLEAR</button>
         </div>
       </div>`;
@@ -267,8 +279,10 @@ function togAcc(id){document.getElementById(id).classList.toggle('open');documen
 function togDel(id,e){e.stopPropagation();document.getElementById(id).classList.toggle('open');document.getElementById('dc'+id).classList.toggle('open')}
 function togAddr(sid,rid,num){const p=document.getElementById('ap'+sid);if(!p)return;const v=p.classList.toggle('visible');if(v)p.querySelector('textarea').focus()}
 function saveAN(rid,num,v){setAN(rid,num,v)}
-function togHold(e,rid,num){e.stopPropagation();setH(rid,num,!getH(rid,num));rerender(RELAYS.findIndex(r=>r.relay==rid))}
-function clearAddr(e,rid,num){e.stopPropagation();setAN(rid,num,'');setH(rid,num,false);rerender(RELAYS.findIndex(r=>r.relay==rid))}
+function togHold(e,rid,num){e.stopPropagation();const v=!getH(rid,num);setH(rid,num,v);if(v){setF(rid,num,false);setV(rid,num,false)}rerender(RELAYS.findIndex(r=>r.relay==rid))}
+function togFwd(e,rid,num){e.stopPropagation();const v=!getF(rid,num);setF(rid,num,v);if(v){setH(rid,num,false);setV(rid,num,false)}rerender(RELAYS.findIndex(r=>r.relay==rid))}
+function togVac(e,rid,num){e.stopPropagation();const v=!getV(rid,num);setV(rid,num,v);if(v){setH(rid,num,false);setF(rid,num,false)}rerender(RELAYS.findIndex(r=>r.relay==rid))}
+function clearAddr(e,rid,num){e.stopPropagation();setAN(rid,num,'');setH(rid,num,false);setF(rid,num,false);setV(rid,num,false);rerender(RELAYS.findIndex(r=>r.relay==rid))}
 function rerender(i){
   if(i<0)return;
   const r=RELAYS[i],bid='b'+i,did='d'+i;
