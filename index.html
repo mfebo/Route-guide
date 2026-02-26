@@ -89,6 +89,19 @@ header h1{font-family:var(--cond);font-weight:900;font-size:1.4rem;letter-spacin
 .codebox{margin:2px 16px 5px 20px;background:rgba(200,16,46,.1);border:1px solid rgba(200,16,46,.3);border-radius:4px;padding:5px 12px;font-family:var(–mono);font-size:.88rem;color:#f78166;display:flex;align-items:center;gap:8px}
 .clbl{color:var(–muted);font-size:.72rem;text-transform:uppercase;letter-spacing:.06em}
 
+/* Map thumbnail */
+.map-thumb-wrap{padding:10px 16px;border-top:1px solid var(--border);background:var(--surface2)}
+.map-thumb-wrap img{width:100%;max-height:140px;object-fit:cover;border-radius:6px;cursor:zoom-in;border:1px solid var(--border);display:block;transition:opacity .15s}
+.map-thumb-wrap img:hover{opacity:.85}
+.map-thumb-lbl{font-family:var(--mono);font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px}
+
+/* Lightbox */
+.lbox{display:none;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:999;align-items:center;justify-content:center;padding:16px}
+.lbox.open{display:flex}
+.lbox img{max-width:100%;max-height:90vh;border-radius:6px;object-fit:contain}
+.lbox-close{position:absolute;top:12px;right:16px;font-size:1.8rem;color:#fff;cursor:pointer;line-height:1;opacity:.7}
+.lbox-close:hover{opacity:1}
+
 /* Legend + stats */
 .legend{padding:9px 16px;background:var(–surface2);border-top:1px solid var(–border);display:flex;gap:6px;flex-wrap:wrap}
 .stats{display:flex;border-top:1px solid var(–border)}
@@ -174,10 +187,19 @@ function buildRelay(r, i) {
       <span class="chev" id="dc${did}">&#9658;</span>
     </div>
     <div class="del-body" id="${did}">${buildSegments(r.segments)}</div>
+    ${r.image ? `<div class="map-thumb-wrap"><div class="map-thumb-lbl">&#128247; Route Map</div><img src="${r.image}" alt="Relay ${r.relay} map" onclick="openLbox('${r.image}')" loading="lazy"></div>` : ''}
     ${legend ? `<div class="legend">${legend}</div>` : ''}
     <div class="stats">${stats}</div>
   </div>
 </div>`;
+}
+
+function openLbox(src) {
+  document.getElementById('lbox-img').src = src;
+  document.getElementById('lbox').classList.add('open');
+}
+function closeLbox() {
+  document.getElementById('lbox').classList.remove('open');
 }
 
 function togAcc(id) {
@@ -197,7 +219,7 @@ const RELAYS = [
 
   // RELAY 1
   {
-    relay:1, name:"Oxley Rd", parkPoint:"915 Oxley Rd", dist:"0.51 mi",
+    relay:1, name:"Oxley Rd", parkPoint:"915 Oxley Rd", dist:"0.51 mi", image:"images/relay1.jpg",
     legend:["dog","fwd"],
     stats:[{n:57,l:"Stops"},{n:1,l:"Dog Flag"},{n:1,l:"Forward"},{n:1,l:"Cross St"}],
     segments:[
@@ -415,6 +437,12 @@ document.getElementById('app').innerHTML = RELAYS.map((r,i) => buildRelay(r,i)).
 setInterval(()=>{document.getElementById('clock').textContent=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})},1000);
 document.getElementById('clock').textContent=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
 </script>
+
+<!-- Lightbox overlay -->
+<div class="lbox" id="lbox" onclick="closeLbox()">
+  <span class="lbox-close">&times;</span>
+  <img id="lbox-img" src="" alt="Route map">
+</div>
 
 </body>
 </html>
