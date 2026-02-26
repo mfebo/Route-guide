@@ -230,6 +230,16 @@ function buildRelay(r,i){
   const mapsUrl='https://maps.google.com/?q='+encodeURIComponent(r.parkPoint+', Grandview Heights, OH');
   const meta=r.stops+' stops'+(r.dist?' · '+r.dist:'');
   const holds=countH(r.relay);
+  // Count fwds and vacs dynamically: hardcoded in data OR carrier-marked in state
+  let fwds=0,vacs=0;
+  const seen=new Set();
+  for(const s of r.segments){
+    if(s.type==='stop'&&!seen.has(s.num)){
+      seen.add(s.num);
+      if((s.flags||[]).includes('fwd')||s.noteType==='fwd'||getF(r.relay,s.num)) fwds++;
+      if((s.flags||[]).includes('vac')||s.noteType==='vac'||getV(r.relay,s.num)) vacs++;
+    }
+  }
   const rn=getRN(r.relay);
   const mapHtml=r.mapImg
     ?`<div class="map-cell" onclick="openLB('${r.mapImg}')"><img src="${r.mapImg}" alt="map"><div class="map-hint">&#8662; enlarge</div></div>`
@@ -257,8 +267,8 @@ function buildRelay(r,i){
     <div class="info-r2">
       <div class="sc${r.keys>0?' key-on':' dim'}"><div class="sc-val">&#128273;</div><div class="sc-lbl">Arrow Key</div></div>
       <div class="sc${holds>0?' hold-on':' dim'}" id="hc${r.relay}"><div class="sc-val">${holds}</div><div class="sc-lbl">Holds</div></div>
-      <div class="sc${r.fwds>0?' fwd-on':' dim'}"><div class="sc-val">${r.fwds}</div><div class="sc-lbl">Forwards</div></div>
-      <div class="sc${r.vacs>0?' vac-on':' dim'}"><div class="sc-val">${r.vacs}</div><div class="sc-lbl">Vacant</div></div>
+      <div class="sc${fwds>0?' fwd-on':' dim'}"><div class="sc-val">${fwds}</div><div class="sc-lbl">Forwards</div></div>
+      <div class="sc${vacs>0?' vac-on':' dim'}"><div class="sc-val">${vacs}</div><div class="sc-lbl">Vacant</div></div>
     </div>
     <div class="rnote-wrap">
       <div class="rnote-lbl">Relay Notes</div>
@@ -303,7 +313,7 @@ const RELAYS = [
 
 {
   relay:1, name:"Oxley Rd", parkPoint:"915 Oxley Rd",
-  stops:57, dist:"0.51 mi", keys:0, fwds:1, vacs:0,
+  stops:57, dist:"0.51 mi", keys:0,
   mapImg:"images/relay1.jpeg",
   segments:[
     {type:"street",street:"Oxley Rd",color:"#1a3a5c"},
@@ -326,7 +336,7 @@ const RELAYS = [
     {type:"stop",num:"930"},{type:"stop",num:"932"},{type:"stop",num:"936"},
     {type:"stop",num:"944"},{type:"stop",num:"948"},{type:"stop",num:"950"},
     {type:"stop",num:"952"},{type:"stop",num:"954"},{type:"stop",num:"960"},
-    {type:"stop",num:"962",flags:["fwd"],note:"FWD Nelson",noteType:"fwd"},
+    {type:"stop",num:"962"},
     {type:"dir",label:"ODD side — upper segment, southbound"},
     {type:"stop",num:"963"},{type:"stop",num:"961"},{type:"stop",num:"957"},
     {type:"stop",num:"955"},{type:"stop",num:"951"},{type:"stop",num:"949"},
@@ -339,7 +349,7 @@ const RELAYS = [
 
 {
   relay:2, name:"Murrell Ave", parkPoint:"1301 Avondale Ave",
-  stops:33, dist:"0.45 mi", keys:0, fwds:0, vacs:0,
+  stops:33, dist:"0.45 mi", keys:0,
   mapImg:"images/relay2.jpeg",
   segments:[
     {type:"street",street:"Murrell Ave",color:"#1a3a5c"},
@@ -365,7 +375,7 @@ const RELAYS = [
 
 {
   relay:3, name:"3rd Ave", parkPoint:"1301 Avondale Ave",
-  stops:19, dist:"0.36 mi", keys:2, fwds:0, vacs:0,
+  stops:19, dist:"0.36 mi", keys:2,
   mapImg:"images/relay3.jpeg",
   segments:[
     {type:"street",street:"3rd Ave",color:"#1a3a5c"},
@@ -389,7 +399,7 @@ const RELAYS = [
 
 {
   relay:4, name:"Morning Ave / 3rd Ave", parkPoint:"1378 Morning Ave",
-  stops:33, dist:"0.41 mi", keys:2, fwds:1, vacs:0,
+  stops:33, dist:"0.41 mi", keys:2,
   mapImg:"images/relay4.jpeg",
   segments:[
     {type:"street",street:"Morning Ave",color:"#2d4a1e"},
@@ -416,13 +426,13 @@ const RELAYS = [
     {type:"dir",label:"EVEN side — northbound"},
     {type:"stop",num:"1350"},{type:"stop",num:"1354"},{type:"stop",num:"1362"},
     {type:"stop",num:"1370"},{type:"stop",num:"1374"},
-    {type:"stop",num:"1378",flags:["fwd"],note:"FWD Mitchell",noteType:"fwd"},
+    {type:"stop",num:"1378"},
   ]
 },
 
 {
   relay:5, name:"3rd Ave / Morning Ave", parkPoint:"1349 Hollywood Pl",
-  stops:27, dist:"0.40 mi", keys:5, fwds:0, vacs:2,
+  stops:27, dist:"0.40 mi", keys:5,
   mapImg:"images/relay5.jpeg",
   segments:[
     {type:"street",street:"3rd Ave",color:"#1a3a5c"},
@@ -436,13 +446,13 @@ const RELAYS = [
     {type:"street",street:"Morning Ave",color:"#2d4a1e"},
     {type:"dir",label:"ODD side — southbound"},
     {type:"stop",num:"1299"},{type:"stop",num:"1293"},
-    {type:"stop",num:"1289",flags:["vac"],note:"VACANT",noteType:"vac"},
+    {type:"stop",num:"1289"},
     {type:"stop",num:"1285"},{type:"stop",num:"1281"},
     {type:"stop",num:"1277"},{type:"stop",num:"1275"},
     {type:"dir",label:"EVEN side — northbound"},
     {type:"stop",num:"1274"},{type:"stop",num:"1278"},{type:"stop",num:"1282"},
     {type:"stop",num:"1286"},{type:"stop",num:"1290"},
-    {type:"stop",num:"1294",flags:["vac"],note:"VACANT",noteType:"vac"},
+    {type:"stop",num:"1294"},
     {type:"stop",num:"1298"},
     {type:"dir",label:"Cross north back to 3rd Ave",cross:true},
     {type:"street",street:"3rd Ave",color:"#1a3a5c"},
@@ -458,7 +468,7 @@ const RELAYS = [
 
 {
   relay:6, name:"Hollywood Pl", parkPoint:"1349 Hollywood Pl",
-  stops:20, dist:"0.22 mi", keys:0, fwds:0, vacs:0,
+  stops:20, dist:"0.22 mi", keys:0,
   mapImg:null,
   segments:[
     {type:"street",street:"Hollywood Pl",color:"#3d2a5c"},
@@ -479,7 +489,7 @@ const RELAYS = [
 
 {
   relay:7, name:"3rd Ave / Hollywood Pl", parkPoint:"1349 Hollywood Pl",
-  stops:24, dist:"0.32 mi", keys:2, fwds:0, vacs:2,
+  stops:24, dist:"0.32 mi", keys:2,
   mapImg:null,
   segments:[
     {type:"street",street:"3rd Ave",color:"#1a3a5c"},
