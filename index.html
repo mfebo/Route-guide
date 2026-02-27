@@ -187,11 +187,12 @@ function buildSegs(segs,rid){
       const x=s.cross,arr=x?'&#8617;':(s.label.toLowerCase().includes('north')?'&#8593;':'&#8595;');
       html+=`<div class="dir${x?' cross':''}" style="background:${cc}10"><span>${arr}</span> ${s.label} <div class="dir-line"></div></div>`;
     }else if(s.type==='stop'){
-      const sid=rid+'_'+s.num;
-      const hold=getH(rid,s.num);
-      const manFwd=getF(rid,s.num);
-      const manVac=getV(rid,s.num);
-      const an=getAN(rid,s.num);
+      const k=s.id||s.num;
+      const sid=rid+'_'+k;
+      const hold=getH(rid,k);
+      const manFwd=getF(rid,k);
+      const manVac=getV(rid,k);
+      const an=getAN(rid,k);
       const isFwd=manFwd||(s.flags||[]).includes('fwd')||s.noteType==='fwd';
       const isVac=manVac||(s.flags||[]).includes('vac')||s.noteType==='vac';
       let rc='stop';
@@ -205,18 +206,18 @@ function buildSegs(segs,rid){
       if(hold)note=`<span class="snote hold">HOLD</span>`;
       else if(s.noteType==='biz'&&s.note)note=`<span class="flag f-biz">&#127970; ${s.note}</span>`;
       else if(s.note)note=`<span class="snote ${s.noteType||''}">${s.note}</span>`;
-      html+=`<div class="${rc}" style="background:${(hold||isFwd||isVac)?'':cc+'15'}" onclick="togAddr('${sid}',${rid},'${s.num}')">
+      html+=`<div class="${rc}" style="background:${(hold||isFwd||isVac)?'':cc+'15'}" onclick="togAddr('${sid}',${rid},'${k}')">
         <span class="snum">${s.num}</span><span class="sstreet">${st}</span>${flags}${note}
       </div>`;
       if(s.units)for(const u of s.units)html+=`<div class="unit" style="background:${cc}0d"><span class="uid">${s.num}${u}</span></div>`;
       if(s.code){const ex=s.codeNote?`<span class="clbl" style="margin-left:8px">${s.codeNote}</span>`:'';html+=`<div class="codebox"><span class="clbl">Code</span><strong>${s.code}</strong>${ex}</div>`;}
       html+=`<div class="anote${(an||hold||manFwd||manVac)?' visible':''}" id="ap${sid}">
-        <textarea placeholder="Add note..." oninput="saveAN(${rid},'${s.num}',this.value)">${an}</textarea>
+        <textarea placeholder="Add note..." oninput="saveAN(${rid},'${k}',this.value)">${an}</textarea>
         <div class="anote-btns">
-          <button class="btn-sm btn-hold${hold?' active':''}" onclick="togHold(event,${rid},'${s.num}')">${hold?'HELD':'HOLD'}</button>
-          <button class="btn-sm btn-fwd${manFwd?' active':''}" onclick="togFwd(event,${rid},'${s.num}')">${manFwd?'FWD ✓':'FWD'}</button>
-          <button class="btn-sm btn-vac${manVac?' active':''}" onclick="togVac(event,${rid},'${s.num}')">${manVac?'VAC ✓':'VAC'}</button>
-          <button class="btn-sm btn-clear" onclick="clearAddr(event,${rid},'${s.num}')">CLEAR</button>
+          <button class="btn-sm btn-hold${hold?' active':''}" onclick="togHold(event,${rid},'${k}')">${hold?'HELD':'HOLD'}</button>
+          <button class="btn-sm btn-fwd${manFwd?' active':''}" onclick="togFwd(event,${rid},'${k}')">${manFwd?'FWD ✓':'FWD'}</button>
+          <button class="btn-sm btn-vac${manVac?' active':''}" onclick="togVac(event,${rid},'${k}')">${manVac?'VAC ✓':'VAC'}</button>
+          <button class="btn-sm btn-clear" onclick="clearAddr(event,${rid},'${k}')">CLEAR</button>
         </div>
       </div>`;
     }
@@ -234,10 +235,11 @@ function buildRelay(r,i){
   let fwds=0,vacs=0;
   const seen=new Set();
   for(const s of r.segments){
-    if(s.type==='stop'&&!seen.has(s.num)){
-      seen.add(s.num);
-      if((s.flags||[]).includes('fwd')||s.noteType==='fwd'||getF(r.relay,s.num)) fwds++;
-      if((s.flags||[]).includes('vac')||s.noteType==='vac'||getV(r.relay,s.num)) vacs++;
+    const k=s.id||s.num;
+    if(s.type==='stop'&&!seen.has(k)){
+      seen.add(k);
+      if((s.flags||[]).includes('fwd')||s.noteType==='fwd'||getF(r.relay,k)) fwds++;
+      if((s.flags||[]).includes('vac')||s.noteType==='vac'||getV(r.relay,k)) vacs++;
     }
   }
   const rn=getRN(r.relay);
@@ -357,7 +359,7 @@ const RELAYS = [
     {type:"stop",num:"1351"},{type:"stop",num:"1345"},{type:"stop",num:"1341"},
     {type:"stop",num:"1335"},{type:"stop",num:"1329"},{type:"stop",num:"1325"},
     {type:"stop",num:"1319"},{type:"stop",num:"1315"},{type:"stop",num:"1309"},
-    {type:"stop",num:"1305"},{type:"stop",num:"1301"},
+    {type:"stop",num:"1305"},{type:"stop",num:"1301",id:"1301mu"},
     {type:"dir",label:"EVEN side — northbound"},
     {type:"stop",num:"1298"},{type:"stop",num:"1306"},{type:"stop",num:"1308"},
     {type:"stop",num:"1314"},{type:"stop",num:"1320"},{type:"stop",num:"1324"},
@@ -365,7 +367,7 @@ const RELAYS = [
     {type:"stop",num:"1346"},{type:"stop",num:"1350"},
     {type:"dir",label:"Cross to Avondale Ave",cross:true},
     {type:"street",street:"Avondale Ave",color:"#2d4a1e"},
-    {type:"stop",num:"1301",street:"Avondale Ave",cross:true},
+    {type:"stop",num:"1301",id:"1301av",street:"Avondale Ave",cross:true},
     {type:"dir",label:"ODD side only — southbound"},
     {type:"stop",num:"1299"},{type:"stop",num:"1293"},{type:"stop",num:"1289"},
     {type:"stop",num:"1283"},{type:"stop",num:"1279"},{type:"stop",num:"1277"},
@@ -404,29 +406,29 @@ const RELAYS = [
   segments:[
     {type:"street",street:"Morning Ave",color:"#2d4a1e"},
     {type:"dir",label:"ODD side — southbound"},
-    {type:"stop",num:"1379"},{type:"stop",num:"1375"},{type:"stop",num:"1371"},
-    {type:"stop",num:"1367"},{type:"stop",num:"1365"},{type:"stop",num:"1363"},
-    {type:"stop",num:"1361"},{type:"stop",num:"1353"},
+    {type:"stop",num:"1379"},{type:"stop",num:"1375"},{type:"stop",num:"1371",id:"1371ma"},
+    {type:"stop",num:"1367",id:"1367ma"},{type:"stop",num:"1365",id:"1365ma"},{type:"stop",num:"1363",id:"1363ma"},
+    {type:"stop",num:"1361",id:"1361ma"},{type:"stop",num:"1353"},
     {type:"dir",label:"Cross to 3rd Ave — start at north end",cross:true},
     {type:"street",street:"3rd Ave",color:"#1a3a5c"},
     {type:"stop",num:"1381",flags:["biz"],note:"Tidy Rides",noteType:"biz",cross:true},
     {type:"dir",label:"ODD side — southbound"},
-    {type:"stop",num:"1371"},{type:"stop",num:"1367"},{type:"stop",num:"1365"},
-    {type:"stop",num:"1363"},{type:"stop",num:"1361"},{type:"stop",num:"1359"},
+    {type:"stop",num:"1371",id:"1371t"},{type:"stop",num:"1367",id:"1367t"},{type:"stop",num:"1365",id:"1365t"},
+    {type:"stop",num:"1363",id:"1363t"},{type:"stop",num:"1361",id:"1361t"},{type:"stop",num:"1359"},
     {type:"stop",num:"1357"},{type:"stop",num:"1355"},
     {type:"dir",label:"EVEN side — northbound"},
-    {type:"stop",num:"1354"},
+    {type:"stop",num:"1354",id:"1354t"},
     {type:"stop",num:"1360",flags:["code","key","apt"],units:["A","B","C","D"],code:"1542"},
-    {type:"stop",num:"1362",flags:["code","key","apt"],units:["A","B","C","D"],code:"1542",codeNote:"same as 1360"},
-    {type:"stop",num:"1370"},{type:"stop",num:"1372"},{type:"stop",num:"1376"},
-    {type:"stop",num:"1378"},
+    {type:"stop",num:"1362",id:"1362t",flags:["code","key","apt"],units:["A","B","C","D"],code:"1542",codeNote:"same as 1360"},
+    {type:"stop",num:"1370",id:"1370t"},{type:"stop",num:"1372"},{type:"stop",num:"1376"},
+    {type:"stop",num:"1378",id:"1378t"},
     {type:"stop",num:"1380",flags:["biz"],note:"Barrel & Taps",noteType:"biz"},
     {type:"dir",label:"Cross back to Morning Ave — EVEN side",cross:true},
     {type:"street",street:"Morning Ave",color:"#2d4a1e"},
     {type:"dir",label:"EVEN side — northbound"},
-    {type:"stop",num:"1350"},{type:"stop",num:"1354"},{type:"stop",num:"1362"},
-    {type:"stop",num:"1370"},{type:"stop",num:"1374"},
-    {type:"stop",num:"1378"},
+    {type:"stop",num:"1350"},{type:"stop",num:"1354",id:"1354ma"},{type:"stop",num:"1362",id:"1362ma"},
+    {type:"stop",num:"1370",id:"1370ma"},{type:"stop",num:"1374"},
+    {type:"stop",num:"1378",id:"1378ma"},
   ]
 },
 
